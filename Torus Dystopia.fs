@@ -92,7 +92,12 @@
             "DEFAULT": 30,
             "MAX": 180,
             "MIN": -180
-        }
+        },
+        {
+			"NAME": "backgroundColor",
+			"TYPE": "color",
+			"DEFAULT": [0, 0, 0, 0]
+		}
     ],
     "ISFVSN": "2"
 }*/
@@ -111,7 +116,7 @@
 // Leon 2017-11-21
 // using code from IQ, Mercury, LJ, Duke, Koltes
 
-#define STEPS 100.
+#define STEPS 250.
 #define VOLUME 0.001
 #define TAU TWO_PI
 #define time iTime
@@ -336,20 +341,30 @@ void main()
     float dither = rng(uv + fract(time));
     vec3 pos = eye;
     float shade = 0.;
+    bool isTorus = false;
     for (float i = 0.; i <= 1.; i += 1. / STEPS) {
         float dist = map(pos);
         if (dist < VOLUME) {
             shade = 1. - i;
+            isTorus = true;
             break;
         }
         dist *= 0.5 + 0.1 * dither;
         pos += ray * dist;
     }
-    vec3 light = vec3(40, 100, -10);
-    float shadow = getShadow(pos, light, 4.);
-    color = vec4(1);
-    color *= shade;
-    color *= shadow;
-    color = smoothstep(0., 0.5, color);
-    color.rgb = sqrt(color.rgb);
+
+    if (isTorus) {
+        vec3 light = vec3(40, 100, -10);
+        float shadow = getShadow(pos, light, 4.);
+        color = vec4(1);
+        color *= shade;
+        color *= shadow;
+        color = smoothstep(0., 0.5, color);
+        color.rgb = sqrt(color.rgb);
+
+        color.rgb *= color.a;
+        color.a = 1.;
+    } else {
+        color = backgroundColor;
+    }
 }
