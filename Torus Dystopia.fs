@@ -52,6 +52,46 @@
             "DEFAULT": 1,
             "MAX": 100,
             "MIN": -100
+        },
+        {
+            "NAME": "cameraX",
+            "LABEL": "Camera x",
+            "TYPE": "float",
+            "DEFAULT": 0,
+            "MAX": 100,
+            "MIN": -100
+        },
+        {
+            "NAME": "cameraY",
+            "LABEL": "Camera y",
+            "TYPE": "float",
+            "DEFAULT": 0,
+            "MAX": 100,
+            "MIN": -100
+        },
+        {
+            "NAME": "cameraZ",
+            "LABEL": "Camera z",
+            "TYPE": "float",
+            "DEFAULT": -20,
+            "MAX": 100,
+            "MIN": -100
+        },
+        {
+            "NAME": "yAxisYotation",
+            "LABEL": "y-axis rotation",
+            "TYPE": "float",
+            "DEFAULT": 22.5,
+            "MAX": 180,
+            "MIN": -180
+        },
+        {
+            "NAME": "xAxisYotation",
+            "LABEL": "x-axis rotation",
+            "TYPE": "float",
+            "DEFAULT": 30,
+            "MAX": 180,
+            "MIN": -180
         }
     ],
     "ISFVSN": "2"
@@ -62,14 +102,18 @@
 #define iTime TIME
 #define iResolution RENDERSIZE
 
+// Constants and functions from LYGIA <https://github.com/patriciogonzalezvivo/lygia>
+#define PI 3.1415926535897932384626433832795
+#define TWO_PI 6.2831853071795864769252867665590
+#define DEG2RAD (PI / 180.0)
+
 // Raymarching sketch inspired by the work of Marc-Antoine Mathieu
 // Leon 2017-11-21
 // using code from IQ, Mercury, LJ, Duke, Koltes
 
 #define STEPS 100.
 #define VOLUME 0.001
-#define PI 3.14159
-#define TAU (2.*PI)
+#define TAU TWO_PI
 #define time iTime
 
 // raymarching toolbox
@@ -163,8 +207,8 @@ vec3 getNormal(vec3 p) {
 }
 
 void camera(inout vec3 p) {
-    p.xz *= rot(PI / 8.);
-    p.yz *= rot(PI / 6.);
+    p.xz *= rot(yAxisYotation * DEG2RAD);
+    p.yz *= rot(xAxisYotation * DEG2RAD);
 }
 
 float windowCross(vec3 pos, vec4 size, float salt) {
@@ -285,7 +329,7 @@ float map(vec3 pos) {
 void main()
 {
     vec2 uv = (coord.xy - 0.5 * iResolution.xy) / iResolution.y;
-    vec3 eye = vec3(0, 0, -20);
+    vec3 eye = vec3(cameraX, cameraY, cameraZ);
     vec3 ray = normalize(vec3(uv, 1.3));
     camera(eye);
     camera(ray);
