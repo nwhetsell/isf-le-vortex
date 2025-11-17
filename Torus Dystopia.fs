@@ -137,7 +137,7 @@ float map(vec3);
 float getShadow(vec3 pos, vec3 at, float k) {
     vec3 dir = normalize(at - pos);
     float maxt = length(at - pos);
-    float f = 01.;
+    float f = 1.;
     float t = VOLUME * 50.;
     for (float i = 0.; i <= 1.; i += 1. / 15.) {
         float dist = map(pos + dir * t);
