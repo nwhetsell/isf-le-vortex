@@ -94,10 +94,35 @@
             "MIN": -180
         },
         {
-			"NAME": "backgroundColor",
-			"TYPE": "color",
-			"DEFAULT": [0, 0, 0, 0]
-		}
+            "NAME": "boxToroidalSeparation",
+            "LABEL": "Box toroidal separation",
+            "TYPE": "float",
+            "DEFAULT": 0.43,
+            "MAX": 1,
+            "MIN": 0
+        },
+        {
+            "NAME": "boxPoloidalSeparation",
+            "LABEL": "Box poloidal separation",
+            "TYPE": "float",
+            "DEFAULT": 0.2,
+            "MAX": 1,
+            "MIN": 0
+        },
+        {
+            "NAME": "boxProportion",
+            "LABEL": "Box proportion",
+            "TYPE": "float",
+            "DEFAULT": 0.2,
+            "MAX": 10,
+            "MIN": 0
+        },
+        {
+            "NAME": "backgroundColor",
+            "LABEL": "Background color",
+            "TYPE": "color",
+            "DEFAULT": [0, 0, 0, 0]
+        }
     ],
     "ISFVSN": "2"
 }*/
@@ -242,13 +267,13 @@ float window(vec3 pos, vec2 dimension, float salt) {
 
 float boxes(vec3 pos, float salt) {
     vec3 p = pos;
-    float ry = cell * 0.43 * (0.3 + salt);
-    float rz = cell * 0.2 * (0.5 + salt);
+    float ry = cell * boxToroidalSeparation * (0.3 + salt);
+    float rz = cell * boxPoloidalSeparation * (0.5 + salt);
     float salty = rng(vec2(floor(pos.y / ry), floor(pos.z / rz)));
     pos.y = repeat(pos.y, ry);
     pos.z = repeat(pos.z, rz);
     float scene = sdBox(pos, vec3(0.1 + 0.8 * salt + salty, 0.1 + 0.2 * salt, 0.1 + 0.2 * salty));
-    scene = max(scene, sdBox(p, vec3(cell * 0.2)));
+    scene = max(scene, sdBox(p, vec3(cell * boxProportion)));
     return scene;
 }
 
