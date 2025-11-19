@@ -330,7 +330,7 @@ float map(vec3 pos) {
     salt = rng(seed);
     p.x -= radius;
     vec2 dimension = vec2(0.75, 0.5);
-    p.x +=  dimension.x * 1.5;
+    p.x += dimension.x * 1.5;
     scene = max(scene, -sdBox(p, vec3(dimension.x, 0.1, dimension.y)));
     scene = min(scene, window(p.xzy, dimension, salt));
 
@@ -345,7 +345,7 @@ float map(vec3 pos) {
     salt = rng(seed);
     p.x -= radius;
     dimension.y = 1.5;
-    p.x +=  dimension.x * 1.25;
+    p.x += dimension.x * 1.25;
     scene = max(scene, -sdBox(p, vec3(dimension, 0.1)));
     scene = min(scene, window(p, dimension, salt));
 
