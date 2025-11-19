@@ -390,13 +390,7 @@ void main()
     if (isTorus) {
         vec3 light = vec3(40, 100, -10);
         float shadow = getShadow(pos, light, 4.);
-        color = vec4(1);
-        color *= shade;
-        color *= shadow;
-        color = smoothstep(0., 0.5, color);
-        color.rgb = sqrt(color.rgb);
-
-        color.rgb *= color.a;
+        color.rgb = vec3(sqrt(smoothstep(0., 0.5, shade * shadow)));
         color.a = 1.;
     } else {
         color = backgroundColor;
