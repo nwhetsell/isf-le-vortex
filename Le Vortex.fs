@@ -140,6 +140,23 @@
 #define TWO_PI 6.2831853071795864769252867665590
 #define DEG2RAD (PI / 180.0)
 
+// https://github.com/patriciogonzalezvivo/lygia/blob/main/math/rotate2d.glsl
+mat2 rotate2d(const in float r) {
+    float c = cos(r);
+    float s = sin(r);
+    return mat2(c, s, -s, c);
+}
+
+// https://github.com/patriciogonzalezvivo/lygia/blob/main/sdf/boxSDF.glsl
+float boxSDF( vec3 p, vec3 b ) {
+    vec3 d = abs(p) - b;
+    return min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0));
+}
+
+// https://github.com/patriciogonzalezvivo/lygia/blob/main/sdf/sphereSDF.glsl
+float sphereSDF(vec3 p) { return length(p); }
+float sphereSDF(vec3 p, float s) { return sphereSDF(p) - s; }
+
 // Raymarching sketch inspired by the work of Marc-Antoine Mathieu
 // Leon 2017-11-21
 // using code from IQ, Mercury, LJ, Duke, Koltes
@@ -152,24 +169,8 @@ float rng(vec2 seed) {
     return fract(sin(dot(seed * 0.1684, vec2(54.649, 321.547))) * 450315.);
 }
 
-mat2 rot(float a) {
-    float c = cos(a);
-    float s = sin(a);
-    return mat2(c, -s, s, c);
-}
-
-float sdCylinder(vec2 p, float r) {
-    return length(p) - r;
-}
-
-float sdBox(vec3 p, vec3 b) {
-    vec3 d = abs(p) - b;
-    return min(max(d.x, max(d.y, d.z)), 0.) + length(max(d, 0.));
-}
-
-float sdTorus(vec3 p, vec2 t) {
-    vec2 q = vec2(length(p.xz) - t.x, p.y);
-    return length(q) - t.y;
+mat2 rotate2dCounterclockwise(const in float r) {
+    return rotate2d(-r);
 }
 
 float amod(inout vec2 p, float count) {
@@ -238,8 +239,8 @@ vec3 getNormal(vec3 p) {
 }
 
 void camera(inout vec3 p) {
-    p.xz *= rot(yAxisYotation * DEG2RAD);
-    p.yz *= rot(xAxisYotation * DEG2RAD);
+    p.xz *= rotate2dCounterclockwise(yAxisYotation * DEG2RAD);
+    p.yz *= rotate2dCounterclockwise(xAxisYotation * DEG2RAD);
 }
 
 float windowCross(vec3 pos, vec4 size, float salt) {
@@ -248,9 +249,9 @@ float windowCross(vec3 pos, vec4 size, float salt) {
     float sy = size.y * (0.3 + salt * 0.7);
     vec2 sxy = vec2(sx, sy);
     p.xy = repeat(p.xy + sxy / 2., sxy);
-    float scene = sdBox(p, size.zyw * 2.);
-    scene = min(scene, sdBox(p, size.xzw * 2.));
-    scene = max(scene, sdBox(pos, size.xyw));
+    float scene = boxSDF(p, size.zyw * 2.);
+    scene = min(scene, boxSDF(p, size.xzw * 2.));
+    scene = max(scene, boxSDF(pos, size.xyw));
     return scene;
 }
 
@@ -260,8 +261,8 @@ float window(vec3 pos, vec2 dimension, float salt) {
     float depthCadre = 0.006;
     float padding = 0.08;
     float scene = windowCross(pos, vec4(dimension, thinn, depth), salt);
-    float cadre = sdBox(pos, vec3(dimension, depthCadre));
-    cadre = max(cadre, -sdBox(pos, vec3(dimension - padding, depthCadre * 2.)));
+    float cadre = boxSDF(pos, vec3(dimension, depthCadre));
+    cadre = max(cadre, -boxSDF(pos, vec3(dimension - padding, depthCadre * 2.)));
     scene = min(scene, cadre);
     return scene;
 }
@@ -274,8 +275,8 @@ float boxes(vec3 pos, float salt) {
     pos.y = repeat(pos.y, ry);
     pos.z = repeat(pos.z, rz);
     float height = boxHeight + 0.8 * salt + salty;
-    float scene = sdBox(pos, vec3(height, 0.1 + 0.2 * salt, 0.1 + 0.2 * salty));
-    scene = max(scene, sdBox(p, vec3(height + cell * boxProportion, cell * boxProportion, cell * boxProportion)));
+    float scene = boxSDF(pos, vec3(height, 0.1 + 0.2 * salt, 0.1 + 0.2 * salty));
+    scene = max(scene, boxSDF(p, vec3(height + cell * boxProportion, cell * boxProportion, cell * boxProportion)));
     return scene;
 }
 
@@ -295,25 +296,25 @@ float map(vec3 pos) {
     pDonut.xz = displaceLoop(pDonut.xz, donut);
     pDonut.z *= donut;
     pDonut.xzy = pDonut.xyz;
-    pDonut.xz *= rot(TIME * 0.05 * speed);
+    pDonut.xz *= rotate2dCounterclockwise(TIME * 0.05 * speed);
 
     // ground
     p = pDonut;
-    scene = min(scene, sdCylinder(p.xz, radius-height));
+    scene = min(scene, sphereSDF(vec3(p.x, 0, p.z), radius-height));
 
     // walls
     p = pDonut;
     float py = p.y + TIME * speed;
     indexY = floor(py / (cell + thin));
     p.y = repeat(py, cell + thin);
-    scene = min(scene, max(abs(p.y) - thin, sdCylinder(p.xz, radius)));
+    scene = min(scene, max(abs(p.y) - thin, sphereSDF(vec3(p.x, 0, p.z), radius)));
     amod(p.xz, segments);
     p.x -= radius;
     scene = min(scene, max(abs(p.z) - thin, p.x));
 
     // horizontal window
     p = pDonut;
-    p.xz *= rot(PI / segments);
+    p.xz *= rotate2dCounterclockwise(PI / segments);
     py = p.y + TIME * speed;
     indexY = floor(py / (cell + thin));
     p.y = repeat(py, cell + thin);
@@ -324,7 +325,7 @@ float map(vec3 pos) {
     p.x -= radius;
     vec2 dimension = vec2(0.75, 0.5);
     p.x += dimension.x * 1.5;
-    scene = max(scene, -sdBox(p, vec3(dimension.x, 0.1, dimension.y)));
+    scene = max(scene, -boxSDF(p, vec3(dimension.x, 0.1, dimension.y)));
     scene = min(scene, window(p.xzy, dimension, salt));
 
     // vertical window
@@ -339,12 +340,12 @@ float map(vec3 pos) {
     p.x -= radius;
     dimension.y = 1.5;
     p.x += dimension.x * 1.25;
-    scene = max(scene, -sdBox(p, vec3(dimension, 0.1)));
+    scene = max(scene, -boxSDF(p, vec3(dimension, 0.1)));
     scene = min(scene, window(p, dimension, salt));
 
     // elements
     p = pDonut;
-    p.xz *= rot(PI / segments);
+    p.xz *= rotate2dCounterclockwise(PI / segments);
     py = p.y + cell / 2. + TIME * speed;
     indexY = floor(py / (cell + thin));
     p.y = repeat(py, cell + thin);
